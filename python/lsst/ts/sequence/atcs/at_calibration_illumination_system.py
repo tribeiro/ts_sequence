@@ -16,7 +16,8 @@ class WavelengthCalibrationSequence(BaseSequence):
     def __init__(self):
         super().__init__(component_list=[('calibrationElectrometer', 1),
                                          ('atMonochromator', None),
-                                         ('sedSpectrometer', None)])
+                                         ('sedSpectrometer', None)],
+                         sub_sequences=[])
 
         # Subscribing to events from the components
         # Super class creates a sender for each of the components but does not subscribe to events as this will be
@@ -42,7 +43,7 @@ class WavelengthCalibrationSequence(BaseSequence):
         # which are available on self.component_list. Then, the CS would be responsible for enabling them, so when
         # self.execute() is called all the required components are up and running and ready to go.
 
-    def configure(self):
+    def configure(self, **kwargs):
         # Get the parameters from an event and configure script
         self.intensity = 15000.  # Default intensity
         self.max_exptime = 120.  # Max exptime in seconds

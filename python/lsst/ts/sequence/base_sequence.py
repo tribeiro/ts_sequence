@@ -10,16 +10,21 @@ __all__ = ['BaseSequence']
 
 class BaseSequence:
 
-    def __init__(self, component_list):
+    def __init__(self, component_list, sub_sequences=None):
         self.log = logging.getLogger(type(self).__name__)
 
         self.component_list = component_list
+
+        # TODO: Placeholder for when a sequence uses a list of sub-sequences to perform part of its actions.
+        self.sub_sequences = []
+        if sub_sequences is not None:
+            self.sub_sequences = sub_sequences
 
         # Dynamically create a sender for each of the components...
         for component in component_list:
             setattr(self, component[0], salpylib.DDSSend(component[0], component[1]))
 
-    def configure(self):
+    def configure(self, **kwargs):
         """
         Get set of parameters from event and configure sequence.
 
