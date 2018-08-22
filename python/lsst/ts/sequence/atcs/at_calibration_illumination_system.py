@@ -45,6 +45,7 @@ class WavelengthCalibrationSequence(BaseSequence):
 
     def configure(self, **kwargs):
         # Get the parameters from an event and configure script
+        self.log.debug('Configuring...')
         self.intensity = 15000.  # Default intensity
         self.max_exptime = 120.  # Max exptime in seconds
         self.gratingType = 1  # Grating type

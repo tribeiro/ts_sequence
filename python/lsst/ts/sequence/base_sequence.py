@@ -1,10 +1,6 @@
 import logging
 from salpytools import salpylib
 
-logging.basicConfig(level=logging.INFO,
-                    format='[%(asctime)s] [%(levelname)s] [%(threadName)s]: %(message)s',
-                    datefmt='%Y-%m-%d %H:%M:%S')
-
 __all__ = ['BaseSequence']
 
 

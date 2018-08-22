@@ -5,11 +5,10 @@ import logging
 import inspect
 
 from lsst.ts.sequence import BaseSequence, atcs
+from lsst.ts.sequence.setup import configure_logging, generate_logfile
 from lsst.ts.sequence import __version__
 
 __all__ = ["main"]
-
-log = logging.getLogger(__name__)
 
 
 def create_parser():
@@ -24,6 +23,8 @@ def create_parser():
     parser.add_argument("--version", action="version", version=__version__)
     parser.add_argument("-v", "--verbose", dest="verbose", action='count', default=0,
                         help="Set the verbosity for the console logging.")
+    parser.add_argument("-c", "--console-format", dest="console_format", default=None,
+                        help="Override the console format.")
     parser.add_argument("-s", "--sequence", dest="sequence", default=None, type=str,
                         help="Specify the name of the sequence.")
     parser.add_argument("-l", "--list", dest="list", action="store_true",
@@ -40,6 +41,12 @@ def main(args):
     :return:
     """
 
+    logfilename = generate_logfile()
+    configure_logging(args, logfilename)
+
+    logger = logging.getLogger("sequence")
+    logger.info("logfile=%s" % logfilename)
+
     valid_sequences = {}
     members = inspect.getmembers(atcs)
     for member in members:
@@ -47,25 +54,25 @@ def main(args):
             valid_sequences[member[0]] = member[1]
 
     if args.list:
-        log.info("Listing all available scripts.")
+        logger.info("Listing all available scripts.")
         for sequence in valid_sequences:
-            log.info('{}'.format(sequence))
+            logger.info('{}'.format(sequence))
         return 0
 
     if args.sequence not in valid_sequences:
         raise IOError('{} is not a valid sequence.'.format(args.sequence))
 
-    log.info("Running sequence {}".format(args.sequence))
+    logger.info("Running sequence {}".format(args.sequence))
 
     seq = valid_sequences[args.sequence]()
 
     seq.configure()
 
-    log.debug('Estimated run time is {}s'.format(seq.run_time()))
+    logger.info('Estimated run time is {}s'.format(seq.run_time()))
 
     seq.execute()
 
-    log.info('Done')
+    logger.info('Done')
 
     return 0
 
