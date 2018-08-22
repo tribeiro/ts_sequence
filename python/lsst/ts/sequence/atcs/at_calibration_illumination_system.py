@@ -82,6 +82,8 @@ class WavelengthCalibrationSequence(BaseSequence):
         # sleep for 1 second after setting monochromator so the measurement stabilizes
         time.sleep(1.)
         # Get a measure of the current intensity from events
+        if self.ce_events.intensity.intensity == 0.:
+            raise IOError("Lamp intensity is zero! It is either switched off or integration time is too short.")
         flux = self.ce_events.intensity.intensity / self.ce_events.integrationTime.intTime
         exptime = self.intensity / flux
         if exptime > self.max_exptime:
