@@ -45,7 +45,7 @@ def main(args):
     configure_logging(args, logfilename)
 
     logger = logging.getLogger("sequence")
-    logger.info("logfile=%s" % logfilename)
+    logger.info("logfile=%s", logfilename)
 
     valid_sequences = {}
     members = inspect.getmembers(atcs)
@@ -56,19 +56,19 @@ def main(args):
     if args.list:
         logger.info("Listing all available scripts.")
         for sequence in valid_sequences:
-            logger.info('{}'.format(sequence))
+            logger.info('%s', sequence)
         return 0
 
     if args.sequence not in valid_sequences:
         raise IOError('{} is not a valid sequence.'.format(args.sequence))
 
-    logger.info("Running sequence {}".format(args.sequence))
+    logger.info("Running sequence %s", args.sequence)
 
     seq = valid_sequences[args.sequence]()
 
     seq.configure()
 
-    logger.info('Estimated run time is {}s'.format(seq.run_time()))
+    logger.info('Estimated run time is %s s', seq.run_time())
 
     seq.execute()
 

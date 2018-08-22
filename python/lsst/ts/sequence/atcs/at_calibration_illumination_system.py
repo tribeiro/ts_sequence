@@ -73,6 +73,7 @@ class WavelengthCalibrationSequence(BaseSequence):
     def execute(self):
 
         # Set up monochromator. This command is commented now so it won't stress the system with tests
+        self.log.debug('Setting up Monochromator...')
         # cmd_id = self.sender.atMonochromator.send_Command('updateMonochromatorSetup',
         #                                                   gratingType=self.gratingType,
         #                                                   fontExitSlitWidth=self.fontExitSlitWidth,
@@ -81,6 +82,7 @@ class WavelengthCalibrationSequence(BaseSequence):
         #                                                   wait_command=True)
 
         # sleep for 1 second after setting monochromator so the measurement stabilizes
+        self.log.debug('Wait for source stabilization...')
         time.sleep(1.)
         # Get a measure of the current intensity from events
         if self.ce_events.intensity.intensity == 0.:
@@ -90,19 +92,27 @@ class WavelengthCalibrationSequence(BaseSequence):
         if exptime > self.max_exptime:
             # Will probably want to send a warning event here
             exptime = self.max_exptime
+        self.log.debug('Exposure time is %.2f s', exptime)
 
         # Now take a spectrum and measure intensity at the same time
         # Will not wait for this command, so we can capture a spectrum simultaneously
         # We can improve this control sequence here but for now lets keep it simple, I'll just add 2 extra seconds
         # so the electrometer read starts 1 second before the sed spectrum and finishes 1 second after.
+        self.log.debug('Starting calibrationElectrometer scan...')
         cmd_id2 = self.sender.calibrationElectrometer.send_Command('StartScanDt',
                                                                    time=exptime + 2.,
                                                                    wait_command=False)
         # wait a second before starting to capture
         time.sleep(1)
         # Take a spectrum with SED Spectrograph. Wait for the read to complete.
+        self.log.debug('Starting sedSpectrometer exposure...')
         cmd_id3 = self.sender.sedSpectrometer.send_Command('captureSpectImage', imageType='test',
                                                            integrationTime=exptime, lamp='lamp',
                                                            wait_command=True)
-        # wait a second after spectrum is captured
+        # wait for calibration Electrometer to finish
+        self.sender.calibrationElectrometer.waitForCompletion('captureSpectImage',
+                                                              cmdid=cmd_id2,
+                                                              timeout=5)
         time.sleep(1)
+        self.log.debug('Sequence complete...')
+
