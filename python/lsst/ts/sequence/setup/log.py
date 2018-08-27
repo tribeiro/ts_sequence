@@ -49,6 +49,7 @@ def configure_logging(options, logfilename=None):
         An alternate port for the socket logger.
     """
     console_detail, file_detail = set_log_levels(options.verbose)
+    console_detail = max(console_detail, 1)
     main_level = max(console_detail, file_detail)
 
     log_format = "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
