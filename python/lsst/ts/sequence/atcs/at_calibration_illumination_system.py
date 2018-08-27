@@ -108,7 +108,7 @@ class WavelengthCalibrationSequence(BaseSequence):
                                                             time=exptime + 2.,
                                                             wait_command=False)
         # wait for calibrationElectrometer to start
-        self.calibrationElectrometer.waitForInProgress(cmdid=cmd_id2[0])
+        self.calibrationElectrometer.waitForInProgress(cmdid=cmd_id2[0], timeout=exptime+30.)
 
         # Take a spectrum with SED Spectrograph. Wait for the read to complete.
         self.log.debug('Starting sedSpectrometer exposure...')
@@ -117,10 +117,10 @@ class WavelengthCalibrationSequence(BaseSequence):
                                                     wait_command=False)
 
         # wait for sedSpectrometer to finish
-        self.sedSpectrometer.waitForCompletion(cmdid=cmd_id3[0])
+        self.sedSpectrometer.waitForCompletion(cmdid=cmd_id3[0], timeout=exptime+30.)
 
         # wait for calibration Electrometer to finish
-        self.calibrationElectrometer.waitForCompletion(cmdid=cmd_id2[0])
+        self.calibrationElectrometer.waitForCompletion(cmdid=cmd_id2[0], timeout=exptime+30.)
 
         self.log.debug('Sequence complete...')
 
