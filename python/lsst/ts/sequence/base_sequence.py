@@ -1,5 +1,6 @@
 import logging
 from salpytools import salpylib
+import json
 
 __all__ = ['BaseSequence']
 
@@ -7,7 +8,12 @@ __all__ = ['BaseSequence']
 class BaseSequence:
 
     def __init__(self, component_list, sub_sequences=None):
-        self.log = logging.getLogger(type(self).__name__)
+        self._name = type(self).__name__
+        self.log = logging.getLogger(self._name)
+
+        self.sender = salpylib.DDSSend('scheduler')  # to send request to the OCS.
+
+        self.config = {}
 
         self.component_list = component_list
 
@@ -18,28 +24,55 @@ class BaseSequence:
 
         # Dynamically create a sender for each of the components...
         for component in component_list:
+            self.log.debug('Subscribing to %s sender...', component[0])
             setattr(self, component[0], salpylib.DDSSend(component[0], component[1]))
+            getattr(getattr(self, component[0]), 'start')()
 
     def configure(self, **kwargs):
-        """
-        Get set of parameters from event and configure sequence.
+        """Get set of parameters from event and configure sequence.
 
-        :return:
+        Parameters
+        ----------
+        kwargs
+
+        Returns
+        -------
+
         """
         raise NotImplementedError()
 
     def run_time(self):
-        """
-        Extimate run time from set of parameters
-        :return:
-        """
+        """Estimate run time from set of parameters.
 
+        Returns
+        -------
+
+        """
         return -1
 
     def execute(self):
-        """
-        Executes script to completion.
+        """Executes script to completion.
 
-        :return:
+        Returns
+        -------
+
         """
         raise NotImplementedError()
+
+    def request(self):
+        """Send request to the OCS to run this script.
+
+        Returns
+        -------
+
+        """
+        payload = {"script": self._name,
+                   "components": self.component_list,
+                   "sub_sequences": self.sub_sequences,
+                   "config": self.config,
+                   "run_time": self.run_time()}
+
+        self.log.debug('payload: %s', json.dumps(payload))
+        self.sender.send_Event('target', payload=json.dumps(payload))  # This may need to be a command!?
+
+        return True

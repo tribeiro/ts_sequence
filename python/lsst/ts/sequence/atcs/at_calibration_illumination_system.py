@@ -32,12 +32,13 @@ class WavelengthCalibrationSequence(BaseSequence):
                                                           device_id=self.component_list[2][1])
 
         # Set the parameters required to configure the script
-        self.intensity = 15000.  # Default intensity
-        self.max_exptime = 120.  # Max exptime in seconds
-        self.gratingType = 1  # Grating type
-        self.fontExitSlitWidth = 4.0  # size of exit slit
-        self.fontEntranceSlitWidth = 2.0  # size of entrance slit
-        self.wavelength = 550  # wavelength in nm
+
+        self.config['intensity'] = 15000.  # Default intensity
+        self.config['max_exptime'] = 120.  # Max exptime in seconds
+        self.config['gratingType'] = 1  # Grating type
+        self.config['fontExitSlitWidth'] = 4.0  # size of exit slit
+        self.config['fontEntranceSlitWidth'] = 2.0  # size of entrance slit
+        self.config['wavelength'] = 550  # wavelength in nm
 
         # In principle the (O, T, AT)CS should be able to interrogate the class about the components it will use,
         # which are available on self.component_list. Then, the CS would be responsible for enabling them, so when
@@ -46,12 +47,12 @@ class WavelengthCalibrationSequence(BaseSequence):
     def configure(self, **kwargs):
         # Get the parameters from an event and configure script
         self.log.debug('Configuring...')
-        self.intensity = 15000.  # Default intensity
-        self.max_exptime = 120.  # Max exptime in seconds
-        self.gratingType = 1  # Grating type
-        self.fontExitSlitWidth = 4.0  # size of exit slit
-        self.fontEntranceSlitWidth = 2.0  # size of entrance slit
-        self.wavelength = 550  # wavelength in nm
+        self.config['intensity'] = 15000.  # Default intensity
+        self.config['max_exptime'] = 120.  # Max exptime in seconds
+        self.config['gratingType'] = 1  # Grating type
+        self.config['fontExitSlitWidth'] = 4.0  # size of exit slit
+        self.config['fontEntranceSlitWidth'] = 2.0  # size of entrance slit
+        self.config['wavelength'] = 550  # wavelength in nm
 
     def run_time(self):
         """
@@ -64,9 +65,9 @@ class WavelengthCalibrationSequence(BaseSequence):
 
         current_grating = self.atm_event.selectedGrating.gratingType
         grating_time = 0.
-        if current_grating != self.gratingType:
+        if current_grating != self.config['gratingType']:
             current_grating += 30.  # add 30 seconds to switch grating
-        exptime = self.max_exptime  # will assume max_exptime for simplicity
+        exptime = self.config['max_exptime']  # will assume max_exptime for simplicity
 
         return total_sleep_time+grating_time+exptime
 
@@ -86,12 +87,16 @@ class WavelengthCalibrationSequence(BaseSequence):
         time.sleep(1.)
         # Get a measure of the current intensity from events
         if self.ce_events.intensity.intensity == 0.:
-            raise IOError("Lamp intensity is zero! It is either switched off or integration time is too short.")
-        flux = self.ce_events.intensity.intensity / self.ce_events.integrationTime.intTime
-        exptime = self.intensity / flux
-        if exptime > self.max_exptime:
-            # Will probably want to send a warning event here
-            exptime = self.max_exptime
+            # FIXME: For testing purposes I won't raise this exception. We should also consider how to inform the
+            # OCS of this. We would probably need to add an error event or something like that.
+            # raise IOError("Lamp intensity is zero! It is either switched off or integration time is too short.")
+            exptime = self.config['max_exptime']
+        else:
+            flux = self.ce_events.intensity.intensity / self.ce_events.integrationTime.intTime
+            exptime = self.intensity / flux
+            if exptime > self.max_exptime:
+                # Will probably want to send a warning event here
+                exptime = self.max_exptime
         self.log.debug('Exposure time is %.2f s', exptime)
 
         # Now take a spectrum and measure intensity at the same time
@@ -99,20 +104,23 @@ class WavelengthCalibrationSequence(BaseSequence):
         # We can improve this control sequence here but for now lets keep it simple, I'll just add 2 extra seconds
         # so the electrometer read starts 1 second before the sed spectrum and finishes 1 second after.
         self.log.debug('Starting calibrationElectrometer scan...')
-        cmd_id2 = self.sender.calibrationElectrometer.send_Command('StartScanDt',
-                                                                   time=exptime + 2.,
-                                                                   wait_command=False)
-        # wait a second before starting to capture
-        time.sleep(1)
+        cmd_id2 = self.calibrationElectrometer.send_Command('startScanDt',
+                                                            time=exptime + 2.,
+                                                            wait_command=False)
+        # wait for calibrationElectrometer to start
+        self.calibrationElectrometer.waitForInProgress(cmdid=cmd_id2[0])
+
         # Take a spectrum with SED Spectrograph. Wait for the read to complete.
         self.log.debug('Starting sedSpectrometer exposure...')
-        cmd_id3 = self.sender.sedSpectrometer.send_Command('captureSpectImage', imageType='test',
-                                                           integrationTime=exptime, lamp='lamp',
-                                                           wait_command=True)
+        cmd_id3 = self.sedSpectrometer.send_Command('captureSpectImage', imageType='test',
+                                                    integrationTime=exptime, lamp='lamp',
+                                                    wait_command=False)
+
+        # wait for sedSpectrometer to finish
+        self.sedSpectrometer.waitForCompletion(cmdid=cmd_id3[0])
+
         # wait for calibration Electrometer to finish
-        self.sender.calibrationElectrometer.waitForCompletion('captureSpectImage',
-                                                              cmdid=cmd_id2,
-                                                              timeout=5)
-        time.sleep(1)
+        self.calibrationElectrometer.waitForCompletion(cmdid=cmd_id2[0])
+
         self.log.debug('Sequence complete...')
 
