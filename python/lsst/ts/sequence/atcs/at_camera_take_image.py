@@ -67,7 +67,7 @@ class ATTakeImage(BaseSequence):
 
         return (self.config['expTime'] +
                 self.config['read_out_time'] +
-                self.config['shutter_time'] if self.config['shutter'] else 0.) * self.config['numImages']
+                (self.config['shutter_time'] if self.config['shutter'] else 0.)) * float(self.config['numImages'])
 
     def execute(self):
 
