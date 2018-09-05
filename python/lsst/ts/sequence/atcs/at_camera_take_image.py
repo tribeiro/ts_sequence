@@ -76,15 +76,15 @@ class ATTakeImage(BaseSequence):
         for n_image in self.config['numImages']:
             self.log.debug('Taking image %i of %i...', n_image, self.config['numImages'])
 
-            cmd_id2 = self.atcamera.send_Command('takeImages', numImages=1,
-                                                 expTime=self.config['expTime'],
-                                                 shutter=self.config['shutter'],
-                                                 imageSequenceName=self.image_name,
-                                                 science=self.config['science'],
-                                                 wait_command=True)
+            cmd_id = self.atcamera.send_Command('takeImages', numImages=1,
+                                                expTime=self.config['expTime'],
+                                                shutter=self.config['shutter'],
+                                                imageSequenceName=self.image_name,
+                                                science=self.config['science'],
+                                                wait_command=True)
 
             # Checks that the command was executed, interrupt if it failed
-            ack = self.atcamera.cmd_responses[cmd_id2[0]]['ack']
+            ack = self.atcamera.cmd_responses[cmd_id[0]]['ack'][-1]  # Get the last ack
             if ack[0] != 303 and ack[1] != 0:
                 raise IOError('Sequence could not be executed. Received (%i, %i, %s) ack response.' % (ack[0],
                                                                                                        ack[1],
