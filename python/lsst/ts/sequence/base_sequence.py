@@ -77,7 +77,7 @@ class BaseSequence:
 
         run_time = self.run_time()
         cmd_id = self.sender.send_Command('target', json_parameters=json.dumps(payload),
-                                          wait_command=True, timeout=run_time if run_time > 0 else 30)
+                                          wait_command=True, timeout=run_time+10 if run_time > 0. else 30)
         self.log.info('Got: %s', self.sender.cmd_responses[cmd_id[0]]['ack'][-1])
 
         return True
