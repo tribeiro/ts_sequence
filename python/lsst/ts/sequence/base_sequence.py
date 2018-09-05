@@ -11,7 +11,7 @@ class BaseSequence:
         self._name = type(self).__name__
         self.log = logging.getLogger(self._name)
 
-        self.sender = salpylib.DDSSend('scheduler')  # to send request to the OCS.
+        self.sender = salpylib.DDSSend('ocs')  # to send request to the OCS.
 
         self.config = {}
 
